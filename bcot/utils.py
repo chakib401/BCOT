@@ -1,18 +1,12 @@
-from sklearn.cluster import KMeans
-import scipy.sparse as ss
 import numpy as np
-from scipy.io import loadmat
+import os.path
+import scipy.io as sio
+import scipy.sparse as sp
+import numpy as np
+import pandas as pd
 from sklearn.preprocessing import normalize
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.metrics import normalized_mutual_info_score as nmi
-from sklearn.metrics import adjusted_rand_score as ari
-import ot
-from gcc.metrics import clustering_accuracy
-from sklearn.utils.extmath import randomized_svd
-from gcc.utils import read_dataset, preprocess_dataset
-from time import time
 
-np.seterr(divide='ignore')
 
 
 def binarize(a, k, sparse=True):
@@ -23,7 +17,7 @@ def binarize(a, k, sparse=True):
 def sinkhorn_scaling(a, b, cost):
   u = np.ones(len(a))
   v = np.ones(len(b))
-  # cost = cost + 1e-7
+  cost = cost + 1e-7
   u_prev = u
   v_prev = v
 
@@ -40,3 +34,15 @@ def sinkhorn_scaling(a, b, cost):
     u_prev = u
   
   return u[:, None] * cost * v
+
+
+def read_dataset(dataset, sparse=False):
+    data = sio.loadmat(os.path.join('data', f'{dataset}.mat'))
+    features = data['fea'].astype(float)
+    if not sp.issparse(features):
+      features = sp.csr_matrix(features)
+    labels = data['gnd'].reshape(-1) - 1
+    n_classes = len(np.unique(labels))
+    return features, labels, n_classes
+
+
